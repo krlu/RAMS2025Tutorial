@@ -1,0 +1,7 @@
+name = "RAMS2025Tutorial"
+uuid = "c6027497-a987-4888-9c47-c7f0f898deb9"
+authors = ["Kenny Lu <klu@cra.com>"]
+version = "0.1.0"
+
+[deps]
+Scruff = "6c98c146-7a27-4df0-99b1-e6e7c9a81876"
