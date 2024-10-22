@@ -1,3 +1,5 @@
+module DynamicModel 
+
 using Base: Float64
 using Scruff
 using Scruff.Utils
@@ -73,3 +75,5 @@ function run_inference()
 end 
 
 run_inference()
+
+end

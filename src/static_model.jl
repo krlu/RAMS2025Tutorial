@@ -1,3 +1,5 @@
+module StaticModel
+
 using Base: Float64
 using Scruff
 using Scruff.Utils
@@ -46,3 +48,5 @@ probNeedsMaintenance = probability(sampledResults, x -> begin
 end)
 println(probTemp)
 println(probNeedsMaintenance)
+
+end
