@@ -27,7 +27,7 @@ variables = [nmVar, tempVar]
 graph = VariableGraph(tempVar => [nmVar])
 net = InstantNetwork(variables, graph)
 runtime = Runtime(net)
-alg = LW(1000)
+alg = LW(100000)
 
 observedTemp = 195.0
 score = FunctionalScore{Float64}(temp -> (begin
