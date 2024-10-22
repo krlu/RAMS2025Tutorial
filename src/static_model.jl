@@ -39,13 +39,15 @@ end))
 evidence = Dict{Symbol, Score}(:temp => score)
 sampledResults = infer(alg, runtime, evidence)
 
+probNeedsMaintenance = probability(sampledResults, x -> begin 
+    x[:needsMaintenance]
+end)
+
 probTemp = probability(sampledResults, x -> begin 
     199 < x[:temp] < 201
 end)
 
-probNeedsMaintenance = probability(sampledResults, x -> begin 
-    x[:needsMaintenance]
-end)
+
 println(probTemp)
 println(probNeedsMaintenance)
 

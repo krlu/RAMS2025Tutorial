@@ -11,7 +11,6 @@ import Scruff: make_initial, make_transition
 
 struct MaintenanceModel <: VariableTimeModel{Tuple{}, Tuple{Bool}, Bool}
 end
-
 make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
     Chain(Tuple{Bool}, Bool, tuple -> begin 
@@ -22,7 +21,6 @@ make_transition(::MaintenanceModel, parts, t) =
             [0.9, 0.1]
         )
     end)
-
 
 struct TemperatureModel <: VariableTimeModel{Tuple{}, Tuple{Bool}, Float64}
 end
@@ -51,10 +49,8 @@ function run_inference()
     pf = AsyncPF(numParticles, numParticles, Int)
     init_filter(pf, runtime)
 
-   
+    score = HardScore{Bool}(false)
     for t in 1:30
-
-        score = HardScore{Bool}(false)
         evidence = 
             if t == 1 
                 Dict{Symbol, Score}(:needsMaintenance => score)
