@@ -1,4 +1,4 @@
-module DynamicModel 
+module DynamicModel2
 
 using Base: Float64
 using Scruff
@@ -16,23 +16,31 @@ make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
     Chain(Tuple{Bool}, Bool, tuple -> begin 
         needsMaintenance = tuple[1]
+        Constant(needsMaintenance)
         Mixture(
             [Constant(needsMaintenance), Cat([true, false], [0.5, 0.5])],
             [0.9, 0.1]
         )
     end)
 
-struct TemperatureModel <: VariableTimeModel{Tuple{}, Tuple{Bool}, Float64}
+struct TemperatureModel <: VariableTimeModel{Tuple{}, Tuple{Bool, Float64}, Float64}
+end
+function transition_helper(nmBool, preTemp)
+    if nmBool 
+        Uniform(0.0, 300.0)
+    else
+        Normal(207.5, 4.0)
+    end
 end
 make_initial(::TemperatureModel, t) = Normal(207.5, 4.0)
 make_transition(::TemperatureModel, parts, t) = 
-    Chain(Tuple{Bool}, Float64, tuple -> begin 
+    Chain(Tuple{Bool, Float64}, Float64, tuple -> begin 
         nmBool = tuple[1]
-        if nmBool 
-            Uniform(0.0, 300.0)
-        else
-            Normal(207.5, 4.0)
-        end
+        prevTemp = tuple[2]
+        Mixture(
+            [Constant(prevTemp), transition_helper(nmBool, prevTemp)],
+            [0.95, 0.05]
+        )
     end)
 
 function run_inference()
@@ -40,7 +48,7 @@ function run_inference()
     temperature = TemperatureModel()(:temp)
     variables = [needsMaintenance, temperature]
     graph = VariableGraph(
-        temperature => [needsMaintenance], 
+        temperature => [needsMaintenance, temperature], 
         needsMaintenance => [needsMaintenance]
     )
     net = DynamicNetwork(variables, VariableGraph(), graph)
@@ -49,22 +57,24 @@ function run_inference()
     pf = AsyncPF(numParticles, numParticles, Int)
     init_filter(pf, runtime)
 
-    score = HardScore{Bool}(false)
+    observedTemp = 211
     for t in 1:30
+        score = FunctionalScore{Float64}(x -> 1/abs(x - observedTemp))
         evidence = 
-            if t == 1 
-                Dict{Symbol, Score}(:needsMaintenance => score)
+            if t == 1
+                Dict{Symbol, Score}(:temp => score)
             else
                 Dict{Symbol, Score}()
             end
         filter_step(pf, runtime, [needsMaintenance, temperature], t, evidence)
         sampledResults = get_state(runtime, :particles)
-        probNeedsMaintenance = probability(sampledResults, x -> begin 
-            x[Symbol("needsMaintenance_$t")]
+
+        probTemp= probability(sampledResults, x -> begin 
+            abs(x[Symbol("temp_$t")] - observedTemp) < 2.0
         end)
         # println("results at time $t")
-        # println(probTemp)
-        println(probNeedsMaintenance)
+        println(probTemp)
+        # println(probNeedsMaintenance)
 
     end
 end 

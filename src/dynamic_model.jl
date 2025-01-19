@@ -11,15 +11,12 @@ import Scruff: make_initial, make_transition
 
 struct MaintenanceModel <: VariableTimeModel{Tuple{}, Tuple{Bool}, Bool}
 end
+
 make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
     Chain(Tuple{Bool}, Bool, tuple -> begin 
         needsMaintenance = tuple[1]
-        Constant(needsMaintenance)
-        Mixture(
-            [Constant(needsMaintenance), Cat([true, false], [0.5, 0.5])],
-            [0.9, 0.1]
-        )
+        Cat([true, false], [0.5, 0.5])
     end)
 
 struct TemperatureModel <: VariableTimeModel{Tuple{}, Tuple{Bool}, Float64}
@@ -59,7 +56,6 @@ function run_inference()
             end
         filter_step(pf, runtime, [needsMaintenance, temperature], t, evidence)
         sampledResults = get_state(runtime, :particles)
-
         probNeedsMaintenance = probability(sampledResults, x -> begin 
             x[Symbol("needsMaintenance_$t")]
         end)
