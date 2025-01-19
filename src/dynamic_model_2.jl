@@ -1,4 +1,4 @@
-module DynamicModel 
+module DynamicModel2
 
 using Base: Float64
 using Scruff
@@ -16,6 +16,7 @@ make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
     Chain(Tuple{Bool}, Bool, tuple -> begin 
         needsMaintenance = tuple[1]
+        # Smoother transition compared to previous example 
         Mixture(
             [Constant(needsMaintenance), Cat([true, false], [0.5, 0.5])],
             [0.9, 0.1]
@@ -28,6 +29,7 @@ make_initial(::TemperatureModel, t) = Normal(207.5, 4.0)
 make_transition(::TemperatureModel, parts, t) = 
     Chain(Tuple{Bool}, Float64, tuple -> begin 
         nmBool = tuple[1]
+        # no dependence on previous temperature results in unstable temperature inference
         if nmBool 
             Uniform(0.0, 300.0)
         else

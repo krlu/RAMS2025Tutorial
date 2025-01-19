@@ -1,4 +1,4 @@
-module DynamicModel2
+module DynamicModel3
 
 using Base: Float64
 using Scruff
@@ -16,7 +16,6 @@ make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
     Chain(Tuple{Bool}, Bool, tuple -> begin 
         needsMaintenance = tuple[1]
-        Constant(needsMaintenance)
         Mixture(
             [Constant(needsMaintenance), Cat([true, false], [0.5, 0.5])],
             [0.9, 0.1]
@@ -25,7 +24,7 @@ make_transition(::MaintenanceModel, parts, t) =
 
 struct TemperatureModel <: VariableTimeModel{Tuple{}, Tuple{Bool, Float64}, Float64}
 end
-function transition_helper(nmBool, preTemp)
+function transition_helper(nmBool)
     if nmBool 
         Uniform(0.0, 300.0)
     else
@@ -38,7 +37,7 @@ make_transition(::TemperatureModel, parts, t) =
         nmBool = tuple[1]
         prevTemp = tuple[2]
         Mixture(
-            [Constant(prevTemp), transition_helper(nmBool, prevTemp)],
+            [Constant(prevTemp), transition_helper(nmBool)],
             [0.95, 0.05]
         )
     end)

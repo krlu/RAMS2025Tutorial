@@ -16,7 +16,9 @@ make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
     Chain(Tuple{Bool}, Bool, tuple -> begin 
         needsMaintenance = tuple[1]
-        Cat([true, false], [0.5, 0.5])
+        # No dependence on previous state
+        # Results in non-smooth transition 
+        Cat([true, false], [0.5, 0.5]) 
     end)
 
 struct TemperatureModel <: VariableTimeModel{Tuple{}, Tuple{Bool}, Float64}
