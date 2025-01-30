@@ -9,37 +9,34 @@ using Scruff.SFuncs
 using Scruff.Algorithms
 import Scruff: make_initial, make_transition
 
+# add simple change in temperature 
+# show prognostics 
+# tweak slide languages for example 3 to reflect this 
+
+temp_mean = 207.5
+temp_var = 4.0
+
 struct MaintenanceModel <: VariableTimeModel{Tuple{}, Tuple{Bool}, Bool}
 end
 
 make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
-    Chain(Tuple{Bool}, Bool, tuple -> begin 
-        needsMaintenance = tuple[1]
-        Mixture(
-            [Constant(needsMaintenance), Cat([true, false], [0.5, 0.5])],
-            [0.9, 0.1]
-        )
+    Chain(Tuple{Float64}, Bool, tuple -> begin 
+        temp = tuple[1]
+        if abs(temp - temp_mean) < temp_var
+            Constant(true)
+        else
+            Constant(false)
+        end
     end)
 
 struct TemperatureModel <: VariableTimeModel{Tuple{}, Tuple{Bool, Float64}, Float64}
 end
-function transition_helper(nmBool)
-    if nmBool 
-        Uniform(0.0, 300.0)
-    else
-        Normal(207.5, 4.0)
-    end
-end
-make_initial(::TemperatureModel, t) = Normal(207.5, 4.0)
+make_initial(::TemperatureModel, t) = Normal(temp_mean, temp_var)
 make_transition(::TemperatureModel, parts, t) = 
-    Chain(Tuple{Bool, Float64}, Float64, tuple -> begin 
-        nmBool = tuple[1]
-        prevTemp = tuple[2]
-        Mixture(
-            [Constant(prevTemp), transition_helper(nmBool)],
-            [0.95, 0.05]
-        )
+    Chain(Tuple{Float64}, Float64, tuple -> begin 
+        prevTemp = tuple[1] + 1
+        Normal(prevTemp, temp_var)
     end)
 
 function run_inference()
@@ -47,8 +44,8 @@ function run_inference()
     temperature = TemperatureModel()(:temp)
     variables = [needsMaintenance, temperature]
     graph = VariableGraph(
-        temperature => [needsMaintenance, temperature], 
-        needsMaintenance => [needsMaintenance]
+        temperature => [temperature], 
+        needsMaintenance => [temperature]
     )
     net = DynamicNetwork(variables, VariableGraph(), graph)
     runtime = Runtime(net)
@@ -56,9 +53,9 @@ function run_inference()
     pf = AsyncPF(numParticles, numParticles, Int)
     init_filter(pf, runtime)
 
-    observedTemp = 211
+    observedTemp = 207.5
     for t in 1:30
-        score = FunctionalScore{Float64}(x -> 1/abs(x - observedTemp))
+        score = HardScore(observedTemp)
         evidence = 
             if t == 1
                 Dict{Symbol, Score}(:temp => score)
@@ -67,13 +64,16 @@ function run_inference()
             end
         filter_step(pf, runtime, [needsMaintenance, temperature], t, evidence)
         sampledResults = get_state(runtime, :particles)
-
+        
         probTemp= probability(sampledResults, x -> begin 
             abs(x[Symbol("temp_$t")] - observedTemp) < 2.0
         end)
         # println("results at time $t")
-        println(probTemp)
-        # println(probNeedsMaintenance)
+#         println(probTemp)
+        probNeedsMaintenance = probability(sampledResults, x -> begin 
+            x[Symbol("needsMaintenance_$t")]
+        end)
+        println(probNeedsMaintenance)
 
     end
 end 
