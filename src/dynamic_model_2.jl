@@ -16,7 +16,6 @@ make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
     Chain(Tuple{Bool}, Bool, tuple -> begin 
         needsMaintenance = tuple[1]
-        # Smoother transition compared to previous example 
         Mixture(
             [Constant(needsMaintenance), Cat([true, false], [0.5, 0.5])],
             [0.9, 0.1]
@@ -51,11 +50,11 @@ function run_inference()
     pf = AsyncPF(numParticles, numParticles, Int)
     init_filter(pf, runtime)
 
-    score = HardScore{Bool}(false)
+    score = HardScore{Float64}(207.5)
     for t in 1:30
         evidence = 
             if t == 1 
-                Dict{Symbol, Score}(:needsMaintenance => score)
+                Dict{Symbol, Score}(:temp => score)
             else
                 Dict{Symbol, Score}()
             end

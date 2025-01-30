@@ -32,10 +32,8 @@ runtime = Runtime(net)
 numSamples = 10000
 alg = LW(numSamples)
 
-observedTemp = 200.0
-score = FunctionalScore{Float64}(temp -> (begin
-    1.0/abs(temp - observedTemp)^2
-end))
+observedTemp = 207.5
+score = HardScore(observedTemp)
 evidence = Dict{Symbol, Score}(:temp => score)
 sampledResults = infer(alg, runtime, evidence)
 

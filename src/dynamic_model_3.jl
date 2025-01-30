@@ -16,9 +16,8 @@ import Scruff: make_initial, make_transition
 temp_mean = 207.5
 temp_var = 4.0
 
-struct MaintenanceModel <: VariableTimeModel{Tuple{}, Tuple{Bool}, Bool}
+struct MaintenanceModel <: VariableTimeModel{Tuple{}, Tuple{Float64}, Bool}
 end
-
 make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
     Chain(Tuple{Float64}, Bool, tuple -> begin 
@@ -30,7 +29,7 @@ make_transition(::MaintenanceModel, parts, t) =
         end
     end)
 
-struct TemperatureModel <: VariableTimeModel{Tuple{}, Tuple{Bool, Float64}, Float64}
+struct TemperatureModel <: VariableTimeModel{Tuple{}, Tuple{Float64}, Float64}
 end
 make_initial(::TemperatureModel, t) = Normal(temp_mean, temp_var)
 make_transition(::TemperatureModel, parts, t) = 
