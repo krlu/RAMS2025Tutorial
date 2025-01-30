@@ -22,7 +22,7 @@ make_initial(::MaintenanceModel, t) = Cat([true, false], [0.5, 0.5])
 make_transition(::MaintenanceModel, parts, t) = 
     Chain(Tuple{Float64}, Bool, tuple -> begin 
         temp = tuple[1]
-        if abs(temp - temp_mean) < temp_var
+        if temp - temp_mean > temp_var
             Constant(true)
         else
             Constant(false)
@@ -53,7 +53,7 @@ function run_inference()
     init_filter(pf, runtime)
 
     observedTemp = 207.5
-    for t in 1:30
+    for t in 1:50
         score = HardScore(observedTemp)
         evidence = 
             if t == 1

@@ -51,7 +51,7 @@ function run_inference()
     init_filter(pf, runtime)
 
     score = HardScore{Float64}(207.5)
-    for t in 1:30
+    for t in 1:50
         evidence = 
             if t == 1 
                 Dict{Symbol, Score}(:temp => score)
